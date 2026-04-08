@@ -1,1 +1,631 @@
-# higgyghjk
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דרך האדם: הבחירה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #121418;
+            --bg-parchment: #e6dfd1;
+            --text-gold: #cba153;
+            --text-gold-light: #ebd8aa;
+            --text-dark: #1a1a1a;
+            --path-base: #a39b8b;
+            --path-good: #f4d03f;
+            --path-evil: #8b0000;
+            --modal-bg: #1a1c20;
+            --modal-border: #4a4028;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Frank Ruhl Libre', serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-gold);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- Header Section --- */
+        header {
+            width: 100%;
+            text-align: center;
+            padding: 40px 20px 20px;
+            background: radial-gradient(circle at top, #232732 0%, var(--bg-dark) 100%);
+            border-bottom: 2px solid var(--text-gold);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--text-gold-light);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8), -1px -1px 0 rgba(255,255,255,0.1);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+
+        .quote-subtitle {
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: #a9a9a9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        /* --- Main Poster Canvas --- */
+        .poster-canvas {
+            width: 100%;
+            max-width: 1200px;
+            height: 900px;
+            position: relative;
+            background: linear-gradient(rgba(230, 223, 209, 0.9), rgba(200, 190, 170, 0.95)), radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%);
+            background-color: var(--bg-parchment);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.7), 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Background Atmospheric Elements */
+        .atmosphere-good {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle at bottom right, rgba(144, 238, 144, 0.1), transparent 70%);
+            pointer-events: none;
+        }
+
+        .atmosphere-evil {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle at bottom left, rgba(139, 0, 0, 0.15), transparent 70%);
+            pointer-events: none;
+        }
+
+        /* --- Generated Artwork (Right Side) --- */
+        .biblical-artwork {
+            position: absolute;
+            top: 0;
+            right: 0; /* Snaps it flush to the right edge */
+            height: 100%; /* Fills the entire height of the canvas */
+            width: 45%; /* Takes up nearly half the screen */
+            object-fit: cover; /* Ensures the image fills the space beautifully without stretching */
+            z-index: 1; /* Keeps it behind the path and interactive nodes */
+            opacity: 0.85; /* Slightly faded so it blends well */
+            /* Creates a smooth fade effect where it meets the center of the canvas */
+            mask-image: linear-gradient(to left, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to left, black 60%, transparent 100%);
+            pointer-events: none; /* Prevents the image from blocking clicks on the nodes */
+            filter: sepia(0.2) contrast(1.1); /* Helps it match the parchment aesthetic */
+        }
+
+        .biblical-artwork-left {
+            position: absolute;
+            top: 0;
+            left: 0; /* Snaps it flush to the left edge */
+            height: 150%;
+            width: 45%;
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0.85;
+            /* Mirroring the fade: now it fades from solid on the left to transparent toward the center */
+            mask-image: linear-gradient(to right, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 60%, transparent 100%);
+            pointer-events: none;
+            filter: sepia(0.2) contrast(1.1);
+        }
+        /* --- SVG Path --- */
+        .path-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.8s ease, filter 0.8s ease;
+        }
+
+        .path-trunk {
+            stroke: var(--path-base);
+            stroke-width: 8;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+        }
+
+        .path-branch {
+            stroke: var(--path-base);
+            stroke-width: 6;
+            opacity: 0.6;
+        }
+
+        /* Glow states triggered by JS */
+        .path-good.active {
+            stroke: var(--path-good);
+            opacity: 1;
+            filter: drop-shadow(0 0 20px rgba(244, 208, 63, 0.8));
+        }
+
+        .path-evil.active {
+            stroke: var(--path-evil);
+            opacity: 1;
+            filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.8));
+        }
+
+        /* --- Interactive Nodes --- */
+        .node {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at 30% 30%, #fff, var(--text-gold));
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(203, 161, 83, 0.6), inset 0 -3px 5px rgba(0,0,0,0.5);
+            transition: all 0.4s ease;
+            z-index: 5;
+        }
+
+            .node:hover {
+                transform: translate(-50%, -50%) scale(1.4);
+                box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            }
+
+        .node-label {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 26, 26, 0.85);
+            color: var(--text-gold-light);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 1rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid var(--text-gold);
+            pointer-events: none;
+        }
+
+        .node:hover .node-label {
+            opacity: 1;
+        }
+
+        /* Metaphorical Figure at the fork */
+        .figure-silhouette {
+            position: absolute;
+            top: 59.5%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            color: var(--text-dark);
+            text-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0.8;
+        }
+
+        /* Positions */
+        #node1 {
+            top: 15%;
+            left: 49%;
+        }
+
+        #node2 {
+            top: 30%;
+            left: 52%;
+        }
+
+        #node3 {
+            top: 45%;
+            left: 48%;
+        }
+
+        #node4 {
+            top: 56%;
+            left: 50%;
+        }
+
+        /* --- Modal (Pop-up) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+        }
+
+            .modal-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+        .modal-content {
+            background: var(--modal-bg);
+            border: 2px solid var(--modal-border);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 850px;
+            padding: 40px;
+            position: relative;
+            transform: translateY(40px) scale(0.95);
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+            .close-btn:hover {
+                color: var(--text-gold);
+            }
+
+        .modal-title {
+            text-align: center;
+            font-size: 2.2rem;
+            color: var(--text-gold-light);
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--modal-border);
+            padding-bottom: 15px;
+        }
+
+        .dilemma-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .dilemma-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .card-header::before {
+                content: '';
+                display: block;
+                width: 15px;
+                height: 15px;
+                background: var(--text-gold);
+                transform: rotate(45deg);
+            }
+
+        .visual-metaphor {
+            height: 120px;
+            border: 1px solid var(--modal-border);
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Metaphor Backgrounds generated with CSS to keep it standalone & high-end */
+        .metaphor-gen {
+            background: linear-gradient(to bottom, #2b2013, #111);
+        }
+
+        .metaphor-mod {
+            background: linear-gradient(to bottom, #1a2a3a, #0a1118);
+        }
+
+        .visual-metaphor span {
+            position: relative;
+            z-index: 2;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.8));
+        }
+
+        .card-quote {
+            font-style: italic;
+            color: #a9a9a9;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-right: 3px solid var(--text-gold);
+            margin-bottom: 15px;
+        }
+
+        .card-desc {
+            color: #ccc;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* --- Footer Controls --- */
+        .controls {
+            width: 100%;
+            padding: 30px;
+            background: var(--bg-dark);
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            border-top: 1px solid var(--modal-border);
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--text-gold);
+            border: 1px solid var(--text-gold);
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .btn:hover {
+                background: var(--text-gold);
+                color: var(--bg-dark);
+                box-shadow: 0 0 20px rgba(203, 161, 83, 0.4);
+            }
+
+        @media (max-width: 800px) {
+            .dilemma-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .poster-canvas {
+                height: 700px;
+            }
+
+            .modal-content {
+                padding: 20px;
+                height: 90vh;
+                overflow-y: auto;
+            }
+
+            /* Hide the artwork on small screens to prevent cluttering the path */
+            .biblical-artwork {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>דרך האדם: הבחירה</h1>
+        <p class="quote-subtitle">"הֲלוֹא אִם-תֵּיטִיב שְׂאֵת, וְאִם לֹא תֵיטִיב – לַפֶּתַח חַטָּאת רֹבֵץ; וְאֵלֶיךָ תְּשׁוּקָתוֹ, וְאַתָּה תִּמְשָׁל-בּוֹ."</p>
+    </header>
+
+    <div class="poster-canvas">
+        <div class="atmosphere-good"></div>
+        <div class="atmosphere-evil"></div>
+
+        <img src="תבג'.png" alt="Genesis Narrative Art" class="biblical-artwork">
+        <img src="combined_blended.png" alt="Genesis Narrative Art" class="biblical-artwork-left" />
+
+        <svg class="path-container" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+            <path class="path-trunk" d="M 500 0 C 450 150, 550 300, 500 600" />
+
+            <path id="svgPathEvil" class="path-branch path-evil" d="M 500 600 C 400 750, 200 800, 50 1000" />
+
+            <path id="svgPathGood" class="path-branch path-good" d="M 500 600 C 600 750, 800 800, 950 1000" />
+        </svg>
+
+        <div class="figure-silhouette">👤❓</div>
+
+        <div class="node" id="node1" onmouseenter="highlightPaths()" onmouseleave="resetPaths()" onclick="openModal('knowledge')">
+            <span class="node-label">ידע וגבולות</span>
+        </div>
+
+        <div class="node" id="node2" onmouseenter="highlightPaths()" onmouseleave="resetPaths()" onclick="openModal('jealousy')">
+            <span class="node-label">שליטה בדחפים</span>
+        </div>
+
+        <div class="node" id="node3" onmouseenter="highlightPaths()" onmouseleave="resetPaths()" onclick="openModal('flood')">
+            <span class="node-label">אחריות עולמית</span>
+        </div>
+
+        <div class="node" id="node4" onmouseenter="highlightPaths()" onmouseleave="resetPaths()" onclick="openModal('towers')">
+            <span class="node-label">גאווה ואתיקה</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="reflect()">הרהר בבחירה</button>
+        <button class="btn" onclick="sharePath()">שתף דרך</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title" id="mTitle">כותרת הדילמה</h2>
+
+            <div class="dilemma-grid">
+                <div class="dilemma-card">
+                    <div class="card-header" id="mGenTitle">מבראשית</div>
+                    <div class="visual-metaphor metaphor-gen">
+                        <span id="mGenIcon">🌲</span>
+                    </div>
+                    <div class="card-quote" id="mGenQuote">"ציטוט"</div>
+                </div>
+
+                <div class="dilemma-card">
+                    <div class="card-header" id="mModTitle">כיום</div>
+                    <div class="visual-metaphor metaphor-mod">
+                        <span id="mModIcon">⚖️</span>
+                    </div>
+                    <div class="card-desc" id="mModDesc">הסבר המצב העכשווי.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const contentData = {
+            knowledge: {
+                title: "הפיתוי הגדול: ידע וגבולות",
+                genTitle: "מבראשית: עץ הדעת",
+                genIcon: "🍎🌲",
+                genQuote: '"וַתֵּרֶא הָאִשָּׁה כִּי טוֹב הָעֵץ לְמַאֲכָל וְכִי תַאֲוָה-הוּא לָעֵינַיִם, וְנֶחְמָד הָעֵץ לְהַשְׂכִּיל..." (בראשית ג\', ו\')',
+                modTitle: "כיום: יושרה מקצועית",
+                modIcon: "⚖️💰",
+                modDesc: "הבחירה בין אמת, עבודה קשה ויושרה, לבין קיצורי דרך, שקרים ורווח מיידי שעלול לחשוף אותך."
+            },
+            jealousy: {
+                title: "להבת הקנאה: שליטה בדחפים",
+                genTitle: "מבראשית: קין והבל",
+                genIcon: "👥🔥",
+                genQuote: '"...לַפֶּתַח חַטָּאת רֹבֵץ; וְאֵלֶיךָ תְּשׁוּקָתוֹ, וְאַתָּה תִּמְשָׁל-בּוֹ." (בראשית ד\', ז\')',
+                modTitle: "כיום: שיימינג ושיח ברשת",
+                modIcon: "📱💢",
+                modDesc: "הבחירה בין שליטה בכעס, ברסן ובתגובה מכובדת, לבין מתן דרור לקנאה, שנאה והרס שמו של אדם ברשת."
+            },
+            flood: {
+                title: "מבול הדורות: אחריות כלל עולמית",
+                genTitle: "מבראשית: דור המבול",
+                genIcon: "🌊🛶",
+                genQuote: '"וַיַּרְא יְהוָה כִּי רַבָּה רָעַת הָאָדָם בָּאָרֶץ, וְכָל-יֵצֶר מַחְשְׁבֹת לִבּוֹ רַק רַע כָּל-הַיּוֹם." (בראשית ו\', ה\')',
+                modTitle: "כיום: משבר האקלים וצריכה",
+                modIcon: "🏭🌳",
+                modDesc: "הבחירה בין צריכה חסרת מעצורים, זיהום והתעלמות מהסביבה, לבין קיימות, אחריות כלפי הכוכב ובחירות אתיות."
+            },
+            towers: {
+                title: "מגדלי גאווה: כוח טכנולוגי ואתיקה",
+                genTitle: "מבראשית: מגדל בבל",
+                genIcon: "🏗️☁️",
+                genQuote: '"הָבָה נִבְנֶה-לָּנוּ עִיר וּמִגְדָּל וְרֹאשׁוֹ בַשָּׁמַיִם, וְנַעֲשֶׂה-לָּנוּ שֵׁם." (בראשית י"א, ד\')',
+                modTitle: "כיום: בינה מלאכותית",
+                modIcon: "🧠⚙️",
+                modDesc: "הבחירה בין שימוש בטכנולוגיה מתקדמת לשליטה, מניפולציה וגאווה, לבין רתימתה לקידמה, שירות האנושות ואתיקה קפדנית."
+            }
+        };
+
+        const modalOverlay = document.getElementById('modalOverlay');
+        const pathGood = document.getElementById('svgPathGood');
+        const pathEvil = document.getElementById('svgPathEvil');
+
+        // Glow effect on paths when hovering nodes
+        function highlightPaths() {
+            pathGood.classList.add('active');
+            pathEvil.classList.add('active');
+        }
+
+        function resetPaths() {
+            pathGood.classList.remove('active');
+            pathEvil.classList.remove('active');
+        }
+
+        // Modal Handling
+        function openModal(key) {
+            const data = contentData[key];
+            document.getElementById('mTitle').textContent = data.title;
+
+            document.getElementById('mGenTitle').textContent = data.genTitle;
+            document.getElementById('mGenIcon').textContent = data.genIcon;
+            document.getElementById('mGenQuote').textContent = data.genQuote;
+
+            document.getElementById('mModTitle').textContent = data.modTitle;
+            document.getElementById('mModIcon').textContent = data.modIcon;
+            document.getElementById('mModDesc').textContent = data.modDesc;
+
+            modalOverlay.classList.add('active');
+            highlightPaths(); // Keep paths illuminated while modal is open
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            resetPaths();
+        }
+
+        function closeModalOutside(event) {
+            if (event.target === modalOverlay) {
+                closeModal();
+            }
+        }
+
+        // Button Functions
+        function reflect() {
+            closeModal();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Subtle flash to simulate deep thought/reset
+            const canvas = document.querySelector('.poster-canvas');
+            canvas.style.filter = 'brightness(1.5)';
+            setTimeout(() => {
+                canvas.style.filter = 'brightness(1)';
+            }, 500);
+        }
+
+        function sharePath() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'דרך האדם: הבחירה',
+                    text: 'הרהור על הבחירה בין טוב לרע, מבראשית ועד ימינו. כנסו לחוות.',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                alert('העתק את הקישור ושתף את הדרך עם אחרים.');
+            }
+        }
+    </script>
+</body>
+</html>
